@@ -1,6 +1,13 @@
 # PlugWebsocket
 
-**TODO: Add description**
+**TODO**
+
+* Add documentation 
+* Add publish mechanism to channels 
+* Add easy API to publish messages to channels 
+* Add proper testing for functional core
+
+# This library is work in progress
 
 ## Installation
 
