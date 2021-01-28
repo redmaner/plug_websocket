@@ -32,10 +32,16 @@ defmodule PlugWebsocket.Boundary.ChannelManager do
     end)
   end
 
-  defp check_channels(channels) when is_nil(channels), do: raise "channel spec was not given to start plug_Websocket properly"
+  defp check_channels(channels) when is_nil(channels),
+    do: raise("channel spec was not given to start plug_Websocket properly")
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  end
+
+  @spec publish_to_channel(atom, PlugWebsocket.Core.Message.t()) :: :ok
+  def publish_to_channel(channel_name, message) when is_atom(channel_name) do
+    GenServer.call(__MODULE__, {:publish_channel, channel_name, message})
   end
 
   def subscribe_to_channel(member, channel) when is_pid(member) and is_atom(channel) do
@@ -48,11 +54,31 @@ defmodule PlugWebsocket.Boundary.ChannelManager do
 
   def handle_call(call, _from, state) do
     case call do
+      {:publish_channel, channel_name, message} ->
+        handle_publish_channel(channel_name, message, state)
+
       {:subscribe, member, channel_name} ->
         handle_subscribe(member, channel_name, state)
 
       {:unsubscribe, member, channel_name} ->
         handle_unsubscribe(member, channel_name, state)
+    end
+  end
+
+  defp handle_publish_channel(channel_name, message, state) do
+    case Map.get(state, channel_name) do
+      nil ->
+        {:reply, :channel_not_found, state}
+
+      channel ->
+        Task.Supervisor.async_nolink(
+          PlugWebsocket.Boundary.MailMan,
+          Channel,
+          :publish_to_channel,
+          [channel, message]
+        )
+
+        {:reply, :ok, state}
     end
   end
 
@@ -84,5 +110,10 @@ defmodule PlugWebsocket.Boundary.ChannelManager do
     )
 
     {:reply, :ok, state |> Map.put(channel_name, new_channel)}
+  end
+
+  def handle_info(info, state) do
+    Logger.debug("Received info: #{inspect(info)}")
+    {:noreply, state}
   end
 end

@@ -26,7 +26,7 @@ defmodule PlugWebsocket.Handler do
       @doc false
       @impl true
       def init(req, state) do
-        {:cowboy_websocket, req, state}
+        {:cowboy_websocket, req, state, %{"idle_timeout" => 600000}}
       end
 
       @doc false
@@ -53,7 +53,13 @@ defmodule PlugWebsocket.Handler do
       @doc false
       @impl true
       def websocket_info(info, state) do
-        unquote(module).handle_info(info, state)
+        case info do
+          {:deliver, message} ->
+            {:reply, message, state}
+
+          info ->
+            unquote(module).handle_info(info, state)
+        end
       end
 
       @doc false
