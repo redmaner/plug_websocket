@@ -4,7 +4,9 @@ defmodule PlugWebsocket.Boundary.ChannelManager do
 
   alias PlugWebsocket.Core.Channel
 
-  def init(opts) do
+  def init(opts \\ []) do
+    opts = Application.get_all_env(:plug_websocket) |> Keyword.merge(opts)
+
     with {:ok, channels} <- Keyword.get(opts, :channels) |> check_channels() do
       Logger.info("WebStream server started with #{inspect(channels)}")
       {:ok, channels}
@@ -30,7 +32,9 @@ defmodule PlugWebsocket.Boundary.ChannelManager do
     end)
   end
 
-  def start_link(opts) do
+  defp check_channels(channels) when is_nil(channels), do: raise "channel spec was not given to start plug_Websocket properly"
+
+  def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
