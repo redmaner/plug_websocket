@@ -58,10 +58,4 @@ defmodule PlugWebsocket do
     ]
   end
 
-  def channel_manager_child_spec(opts) do
-    %{
-      id: PlugWebsocket.Boundary.ChannelManager,
-      start: {PlugWebsocket.Boundary.ChannelManager, :start_link, [opts]}
-    }
-  end
 end
