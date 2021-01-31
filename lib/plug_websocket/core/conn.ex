@@ -11,10 +11,10 @@ defmodule PlugWebsocket.Core.Conn do
   @type address :: {:inet.ip_address(), :inet.port_number()}
 
   @type reply ::
-          {:reply, frame :: Frame.t(), conn :: %__MODULE__{}}
-          | {:noreply, conn :: %__MODULE__{}}
+          {:reply, frame :: Frame.t(), conn :: t()}
+          | {:noreply, conn :: t()}
 
-  @spec new(pid(), PlugWebsocket.Core.Conn.address()) :: conn :: Conn.t()
+  @spec new(pid(), address()) :: conn :: Conn.t()
   def new(pid, peer_address) do
     %__MODULE__{
       pid: pid,
