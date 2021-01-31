@@ -1,4 +1,4 @@
-defmodule PlugWebsocket.Core.Message do
+defmodule PlugWebsocket.Core.Frame do
   @type t ::
           {:ping, nil}
           | {:pong, nil}
