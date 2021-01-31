@@ -4,11 +4,17 @@ defmodule PlugWebsocket.Core.Channel do
   # This is used by the PlugWebsocket.Boundary.ChannelManager and should
   # not be used directly.
 
-  alias PlugWebsocket.Core.Message
+  alias PlugWebsocket.Core.Frame
+
+  @type t :: %__MODULE__{
+          name: atom(),
+          max_members: integer(),
+          members: MapSet
+        }
 
   defstruct ~w[name members max_members]a
 
-  @spec new(atom(), integer()) :: %__MODULE__{}
+  @spec new(atom(), integer()) :: Channel.t()
   def new(name, max_members) do
     %__MODULE__{
       name: name,
@@ -17,8 +23,8 @@ defmodule PlugWebsocket.Core.Channel do
     }
   end
 
-  @spec subscribe_pid_to_channel(%__MODULE__{}, pid()) ::
-          {:ok, new_channel :: %__MODULE__{}}
+  @spec subscribe_pid_to_channel(Channel.t(), pid()) ::
+          {:ok, new_channel :: Channel.t()}
           | {:error, :max_members_reached}
   def subscribe_pid_to_channel(channel, member) do
     case MapSet.member?(channel.members, member) do
@@ -39,8 +45,8 @@ defmodule PlugWebsocket.Core.Channel do
     {:ok, %__MODULE__{channel | members: new_members}}
   end
 
-  @spec unsubscribe_pid_to_channel(%__MODULE__{}, pid()) ::
-          {:ok, new_channel :: %__MODULE__{}}
+  @spec unsubscribe_pid_to_channel(Channel.t(), pid()) ::
+          {:ok, new_channel :: Channel.t()}
   def unsubscribe_pid_to_channel(channel, member) do
     case MapSet.member?(channel.members, member) do
       true ->
@@ -52,21 +58,22 @@ defmodule PlugWebsocket.Core.Channel do
     end
   end
 
-  @spec publish_to_channel(channel :: %__MODULE__{}, message :: Message.t()) ::
-          {:ok, message :: Message.t()}
-  def publish_to_channel(channel, message) do
-    Enum.each(channel.members, &publish_to_member(&1, message))
-    {:ok, message}
+  @spec publish_to_channel(channel :: Channel.t(), frame :: Frame.t()) ::
+          {:ok, frame :: Frame.t()}
+  def publish_to_channel(channel, frame) do
+    Enum.each(channel.members, &publish_to_member(&1, frame))
+    {:ok, frame}
   end
 
-  @spec publish_to_member(member :: pid(), message :: Message.t()) :: {:ok, message :: Message.t()}
-  def publish_to_member(member, message) do
+  @spec publish_to_member(member :: pid(), frame :: Frame.t()) ::
+          {:ok, frame :: Frame.t()}
+  def publish_to_member(member, frame) do
     Process.alive?(member)
-    |> send_message(member, message)
+    |> send_message(member, frame)
 
-    {:ok, message}
+    {:ok, frame}
   end
 
-  defp send_message(true, member, message), do: send(member, {:deliver, message})
-  defp send_message(false, _member, _message), do: :ok
+  defp send_message(true, member, frame), do: send(member, {:deliver, frame})
+  defp send_message(false, _member, _frame), do: :ok
 end
