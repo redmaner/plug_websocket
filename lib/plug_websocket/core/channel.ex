@@ -59,10 +59,12 @@ defmodule PlugWebsocket.Core.Channel do
     {:ok, message}
   end
 
-  @spec publish_to_member(member :: pid(), message :: Message.t()) :: :ok
+  @spec publish_to_member(member :: pid(), message :: Message.t()) :: {:ok, message :: Message.t()}
   def publish_to_member(member, message) do
     Process.alive?(member)
     |> send_message(member, message)
+
+    {:ok, message}
   end
 
   defp send_message(true, member, message), do: send(member, {:deliver, message})
