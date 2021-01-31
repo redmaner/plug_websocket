@@ -78,7 +78,7 @@ defmodule PlugWebsocket.Handler do
     end
   end
 
-  @callback handle_ws(frame :: Frame.t(), conn :: Conn.t()) :: Conn.reply()
+  @callback handle_frame(frame :: Frame.t(), conn :: Conn.t()) :: Conn.reply()
 
   @callback handle_info(info :: term(), conn :: Conn.t()) :: Conn.reply()
 
