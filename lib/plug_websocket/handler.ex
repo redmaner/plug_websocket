@@ -1,4 +1,6 @@
 defmodule PlugWebsocket.Handler do
+  alias PlugWebsocket.Core.{Conn, Frame}
+
   defmacro __using__(opts) do
     module = __CALLER__.module
 
@@ -26,7 +28,7 @@ defmodule PlugWebsocket.Handler do
       @doc false
       @impl true
       def init(req, state) do
-        {:cowboy_websocket, req, state, %{"idle_timeout" => 600000}}
+        {:cowboy_websocket, req, %{peer: req.peer}, %{"idle_timeout" => 600_000}}
       end
 
       @doc false
@@ -37,7 +39,7 @@ defmodule PlugWebsocket.Handler do
                unquote(channel_name)
              ) do
           :ok ->
-            {:ok, state}
+            {:ok, PlugWebsocket.Core.Conn.new(self(), state.peer)}
 
           {:error, reason} ->
             {:error, reason}
@@ -46,8 +48,8 @@ defmodule PlugWebsocket.Handler do
 
       @doc false
       @impl true
-      def websocket_handle(message, state) do
-        unquote(module).handle_message(message, state)
+      def websocket_handle(frame, state) do
+        unquote(module).handle_frame(frame, state)
       end
 
       @doc false
@@ -76,11 +78,9 @@ defmodule PlugWebsocket.Handler do
     end
   end
 
-  @callback handle_message(message :: term(), state :: term()) ::
-              {:reply, reply :: term(), new_state :: term()}
+  @callback handle_ws(frame :: Frame.t(), conn :: Conn.t()) :: Conn.reply()
 
-  @callback handle_info(info :: term(), state :: term()) ::
-              {:reply, reply :: term(), new_state :: term()}
+  @callback handle_info(info :: term(), conn :: Conn.t()) :: Conn.reply()
 
   @callback handle_disconnect(reason :: term(), req :: term(), state :: term()) :: reply :: term()
 end
